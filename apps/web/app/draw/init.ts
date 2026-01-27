@@ -43,8 +43,15 @@ type Shapes =
     }
   | {
       type: "pan";
+      id?: string;
       x: number;
       y: number;
+    }
+  | {
+      type: "delete";
+      id?: string;
+      x?: number;
+      y?: number;
     };
 
 // keep handler references OUTSIDE init
@@ -67,7 +74,9 @@ export async function init({
   if (!ctx) return;
 
   let movedShapes: { id: string; shape: Shapes }[] = [];
+  let deletedShapes: { id: string; shape: Shapes }[] = [];
   let existingShapes: Shapes[] = await getShapes(roomId);
+
   clearCanvas(ctx, canvas, existingShapes);
 
   console.log(existingShapes);
@@ -80,19 +89,29 @@ export async function init({
     }
 
     if (data.type === "update") {
-      const message = data.message
+      const message = data.message;
       message.forEach((m: { id: string; shape: Shapes }) => {
-        const { id, shape } = m
+        const { id, shape } = m;
 
         existingShapes = existingShapes.map((s) => {
-          if (s.type === "pan" || s.type === "BoundingRect") return s
+          if (s.type === "pan" || s.type === "BoundingRect") return s;
           if (s.id === id) {
-            return shape
+            return shape;
           }
           return s;
-        })
-      })
+        });
+      });
       clearCanvas(ctx, canvas, existingShapes);
+    }
+
+    if (data.type === 'delete') {
+      const message = data.message;
+
+      message.forEach((m: { id: string; shape: Shapes }) => {
+        const { id } = m;
+        existingShapes = existingShapes.filter((s) => s.id !== id);
+        clearCanvas(ctx, canvas, existingShapes);
+      })
     }
   };
 
@@ -103,7 +122,6 @@ export async function init({
   if (mouseUpHandler) canvas.removeEventListener("mouseup", mouseUpHandler);
 
   let clicked = false;
-  let selected = false;
 
   let startX = 0;
   let startY = 0;
@@ -128,7 +146,7 @@ export async function init({
     clearCanvas(ctx, canvas, existingShapes);
     ctx.strokeStyle = "white";
 
-    if (shape === "Rect" || shape === "pan") {
+    if (shape === "Rect" || shape === "pan" || shape === "delete") {
       ctx.strokeRect(startX, startY, width, height);
     }
 
@@ -222,7 +240,7 @@ export async function init({
       sendSahpe(socket, shapeId, details, roomId);
     }
 
-    if (shape === "pan") {
+    if (shape === "pan" || shape === "delete") {
       if (findBoundingBox({ shapes: existingShapes })) {
         const element = existingShapes.find(
           (shape) => shape.type === "BoundingRect",
@@ -240,9 +258,13 @@ export async function init({
             element.endY,
           )
         ) {
-          const updateShapes = await Promise.all(
-            existingShapes.map(async (shape) => {
-              if (shape.type === "BoundingRect" || shape.type === "pan")
+          if (shape === "pan") {
+            const updateShapes = existingShapes.map((shape) => {
+              if (
+                shape.type === "BoundingRect" ||
+                shape.type === "pan" ||
+                shape.type === "delete"
+              )
                 return shape;
 
               if (isShapeInsideBoundingBox(shape, element)) {
@@ -259,18 +281,41 @@ export async function init({
               }
 
               return shape;
-            }),
-          );
+            });
 
-          console.log(movedShapes);
+            console.log(movedShapes);
 
-          updateShapes.pop();
+            updateShapes.pop();
 
-          existingShapes = updateShapes;
+            existingShapes = updateShapes;
 
-          updateShape(socket, movedShapes, roomId);
+            updateShape(socket, movedShapes, roomId, "update");
 
-          clearCanvas(ctx, canvas, existingShapes);
+            movedShapes = [];
+
+            clearCanvas(ctx, canvas, existingShapes);
+          } else if (shape === "delete") {
+            const updateShapes: Shapes[] = [];
+
+            for (let s of existingShapes){
+              if (s.type === "BoundingRect" || s.type === "pan" || s.type === "delete") continue
+
+              if (isShapeInsideBoundingBox(s, element)) {
+                deletedShapes.push({ id: s.id, shape: s });
+                continue
+              }
+
+              updateShapes.push(s);
+            }
+
+            existingShapes = updateShapes;
+
+            clearCanvas(ctx, canvas, existingShapes);
+
+            updateShape(socket, deletedShapes, roomId, "delete");
+
+            deletedShapes = [];
+          }
         } else {
           const updatedShapes = existingShapes.map((shape) => {
             return shape;
@@ -318,6 +363,10 @@ function findBoundingBox({ shapes }: { shapes: Shapes[] }) {
   }
 }
 
+const pan = (startX: number, startY: number) => {
+
+}   
+
 const clearCanvas = (
   ctx: CanvasRenderingContext2D,
   canvas: HTMLCanvasElement,
@@ -357,19 +406,6 @@ const getShapes = async (roomId: number) => {
   ) as Shapes[];
 };
 
-async function updateDataBase(shapeId: string, newMessage: string) {
-  await axios.put(
-    `${BACKEND_URL}/chat/${shapeId}`,
-    {
-      message: newMessage,
-    },
-    {
-      headers: { Authorization: `Bearer ${TOKEN}` },
-    },
-  );
-
-  return true;
-}
 
 const sendSahpe = (
   socket: WebSocket,
@@ -391,15 +427,17 @@ const updateShape = (
   socket: WebSocket,
   shapes: { id: string; shape: Shapes }[],
   roomId: number,
+  type?: string
 ) => {
   socket.send(
     JSON.stringify({
-      type: "update",
+      type,
       roomId,
       message: JSON.stringify(shapes),
     }),
   );
 };
+
 
 const shiftRect = ({
   shape,
@@ -554,7 +592,7 @@ function isShapeInsideBoundingBox(shape: Shapes, box: any): boolean {
       return false;
     }
   } else if (shape.type === "line") {
-    if (shape.endX > shape.startX && shape.endY > shape.startY) {
+    if (shape.endX >= shape.startX && shape.endY >= shape.startY) {
       return isInsideRect({
         rectX1: box.startX,
         rectY1: box.startY,
@@ -569,7 +607,7 @@ function isShapeInsideBoundingBox(shape: Shapes, box: any): boolean {
         shapeW: shape.endX - shape.startX,
         shapeH: shape.endY - shape.startY,
       });
-    } else if (shape.endX > shape.startX && shape.endY < shape.startY) {
+    } else if (shape.endX >= shape.startX && shape.endY <= shape.startY) {
       console.log("case 2");
       return isInsideRect({
         rectX1: box.startX,
@@ -585,7 +623,7 @@ function isShapeInsideBoundingBox(shape: Shapes, box: any): boolean {
         shapeW: shape.endX - shape.startX,
         shapeH: shape.startY - shape.endY,
       });
-    } else if (shape.endX < shape.startX && shape.endY > shape.startY) {
+    } else if (shape.endX <= shape.startX && shape.endY >= shape.startY) {
       console.log("case3");
       return isInsideRect({
         rectX1: box.startX,
@@ -601,7 +639,7 @@ function isShapeInsideBoundingBox(shape: Shapes, box: any): boolean {
         shapeW: shape.startX - shape.endX,
         shapeH: shape.endY - shape.startY,
       });
-    } else if (shape.endX < shape.startX && shape.endY < shape.startY) {
+    } else if (shape.endX <= shape.startX && shape.endY <= shape.startY) {
       console.log("case4");
       return isInsideRect({
         rectX1: box.startX,

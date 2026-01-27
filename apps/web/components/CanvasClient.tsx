@@ -3,11 +3,11 @@
 import { useEffect, useRef, useState } from "react"
 import { useSocket } from "../hooks/useSocket"
 import { init } from "../app/draw/init"
-import { Pencil, RectangleHorizontal, Circle, MousePointer2 } from "lucide-react"
+import { Pencil, RectangleHorizontal, Circle, MousePointer2, Trash } from "lucide-react"
 import { Icon } from "./Icon"
 
 interface Shapes {
-    type: "Rect" | "Circle" | "line" | "pan"
+    type: "Rect" | "Circle" | "line" | "pan" | "delete"
 }
 
 export function CanvasClient({ roomId }: { roomId: number }) {
@@ -46,5 +46,6 @@ function ToolBar({ shape, setShape }: ToolBarProps) {
         <Icon icon={<RectangleHorizontal />} activated={shape === "Rect"} onClick={() => setShape("Rect")} />
         <Icon icon={<Circle />} activated={shape === "Circle"} onClick={() => setShape("Circle")}/>
         <Icon icon={<MousePointer2 />} activated={shape === "pan"} onClick={() => setShape("pan")} /> 
+        <Icon icon={<Trash />} activated={shape === "delete"} onClick={() => setShape("delete")} />
     </div>
 }

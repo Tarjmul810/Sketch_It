@@ -86,10 +86,7 @@ wss.on("connection", function connection(ws, req) {
     if (parsedData.type === "update") {
       const roomId = parsedData.roomId;
       const message = JSON.parse(parsedData.message);
-
-    
-      console.log(message[0])
-
+      
       message.forEach( async (m: any) => {
         const { id, shape } = m
         
@@ -108,6 +105,36 @@ wss.on("connection", function connection(ws, req) {
           user.ws.send(
             JSON.stringify({
               type: "update",
+              roomId,
+              message,
+            })
+          )
+        }
+      }
+    )
+    }
+
+    if (parsedData.type === "delete") {
+      const roomId = parsedData.roomId;
+      const message = JSON.parse(parsedData.message);
+      
+      message.forEach( async (m: any, index: any) => {
+        const { id } = m
+
+        console.log(id, index)
+        
+        await prismaClient.chat.delete({
+          where: {
+            shapeId: id
+          }
+        })
+      })
+
+      Users.forEach((user) => {
+        if (user.rooms.includes(roomId)) {
+          user.ws.send(
+            JSON.stringify({
+              type: "delete",
               roomId,
               message,
             })
