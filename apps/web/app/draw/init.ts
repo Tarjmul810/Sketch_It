@@ -78,6 +78,22 @@ export async function init({
       existingShapes.push(JSON.parse(data.message));
       clearCanvas(ctx, canvas, existingShapes);
     }
+
+    if (data.type === "update") {
+      const message = data.message
+      message.forEach((m: { id: string; shape: Shapes }) => {
+        const { id, shape } = m
+
+        existingShapes = existingShapes.map((s) => {
+          if (s.type === "pan" || s.type === "BoundingRect") return s
+          if (s.id === id) {
+            return shape
+          }
+          return s;
+        })
+      })
+      clearCanvas(ctx, canvas, existingShapes);
+    }
   };
 
   if (mouseDownHandler)
@@ -156,7 +172,7 @@ export async function init({
       const shapeId = details.id;
 
       existingShapes.push(details);
-      ctx.strokeRect(startX, startY, width, height,);
+      ctx.strokeRect(startX, startY, width, height);
 
       sendSahpe(socket, shapeId, details, roomId);
     }
@@ -207,7 +223,6 @@ export async function init({
     }
 
     if (shape === "pan") {
-
       if (findBoundingBox({ shapes: existingShapes })) {
         const element = existingShapes.find(
           (shape) => shape.type === "BoundingRect",
@@ -225,18 +240,22 @@ export async function init({
             element.endY,
           )
         ) {
-
           const updateShapes = await Promise.all(
             existingShapes.map(async (shape) => {
-              if (shape.type === "BoundingRect" || shape.type === "pan") return shape;
+              if (shape.type === "BoundingRect" || shape.type === "pan")
+                return shape;
 
-              if (
-                isShapeInsideBoundingBox(shape, element)) {
-                 const shiftedShape = shape.type === "Rect" ? shiftRect({shape, startX, startY, endX, endY} ) : shape.type === "Circle" ? shiftCircle({shape, startX, startY, endX, endY }) : shiftLine({shape, startX, startY, endX, endY})
-                
-                 movedShapes.push({id: shape.id, shape: shiftedShape})
-                
-                 return shiftedShape
+              if (isShapeInsideBoundingBox(shape, element)) {
+                const shiftedShape =
+                  shape.type === "Rect"
+                    ? shiftRect({ shape, startX, startY, endX, endY })
+                    : shape.type === "Circle"
+                      ? shiftCircle({ shape, startX, startY, endX, endY })
+                      : shiftLine({ shape, startX, startY, endX, endY });
+
+                movedShapes.push({ id: shape.id, shape: shiftedShape });
+
+                return shiftedShape;
               }
 
               return shape;
@@ -249,7 +268,7 @@ export async function init({
 
           existingShapes = updateShapes;
 
-          updateShape(socket, movedShapes, roomId)
+          updateShape(socket, movedShapes, roomId);
 
           clearCanvas(ctx, canvas, existingShapes);
         } else {
@@ -436,7 +455,7 @@ const shiftLine = ({
   startY,
   endX,
   endY,
-} : {
+}: {
   shape: any;
   startX: number;
   startY: number;
@@ -503,7 +522,7 @@ function isInsideRect({
   ) {
     return true;
   } else {
-    return false
+    return false;
   }
 }
 
@@ -519,7 +538,7 @@ function isShapeInsideBoundingBox(shape: Shapes, box: any): boolean {
     ) {
       return true;
     } else {
-      return false
+      return false;
     }
   } else if (shape.type === "Circle") {
     if (
@@ -532,11 +551,11 @@ function isShapeInsideBoundingBox(shape: Shapes, box: any): boolean {
     ) {
       return true;
     } else {
-      return false
+      return false;
     }
   } else if (shape.type === "line") {
-    if (shape.endX > shape.startX &&  shape.endY > shape.startY) {
-     return isInsideRect({
+    if (shape.endX > shape.startX && shape.endY > shape.startY) {
+      return isInsideRect({
         rectX1: box.startX,
         rectY1: box.startY,
         rectX2: box.endX,
@@ -549,11 +568,9 @@ function isShapeInsideBoundingBox(shape: Shapes, box: any): boolean {
         rectH: box.height,
         shapeW: shape.endX - shape.startX,
         shapeH: shape.endY - shape.startY,
-      }); 
-
-      
-    } else if(shape.endX > shape.startX && shape.endY < shape.startY) {
-      console.log("case 2")
+      });
+    } else if (shape.endX > shape.startX && shape.endY < shape.startY) {
+      console.log("case 2");
       return isInsideRect({
         rectX1: box.startX,
         rectY1: box.startY,
@@ -567,9 +584,9 @@ function isShapeInsideBoundingBox(shape: Shapes, box: any): boolean {
         rectH: box.height,
         shapeW: shape.endX - shape.startX,
         shapeH: shape.startY - shape.endY,
-      })
+      });
     } else if (shape.endX < shape.startX && shape.endY > shape.startY) {
-      console.log("case3")
+      console.log("case3");
       return isInsideRect({
         rectX1: box.startX,
         rectY1: box.startY,
@@ -583,9 +600,9 @@ function isShapeInsideBoundingBox(shape: Shapes, box: any): boolean {
         rectH: box.height,
         shapeW: shape.startX - shape.endX,
         shapeH: shape.endY - shape.startY,
-      })
+      });
     } else if (shape.endX < shape.startX && shape.endY < shape.startY) {
-      console.log("case4")
+      console.log("case4");
       return isInsideRect({
         rectX1: box.startX,
         rectY1: box.startY,
@@ -599,10 +616,10 @@ function isShapeInsideBoundingBox(shape: Shapes, box: any): boolean {
         rectH: box.height,
         shapeW: shape.startX - shape.endX,
         shapeH: shape.startY - shape.endY,
-      })
+      });
     }
-    console.log("i am here")
+    console.log("i am here");
   }
 
-  return false
+  return false;
 }

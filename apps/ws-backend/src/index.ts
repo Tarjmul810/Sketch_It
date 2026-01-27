@@ -87,11 +87,13 @@ wss.on("connection", function connection(ws, req) {
       const roomId = parsedData.roomId;
       const message = JSON.parse(parsedData.message);
 
+    
       console.log(message[0])
 
-      message.forEach((m: any) => {
+      message.forEach( async (m: any) => {
         const { id, shape } = m
-        prismaClient.chat.update({
+        
+        await prismaClient.chat.update({
           where: {
             shapeId: id
           },
@@ -105,7 +107,7 @@ wss.on("connection", function connection(ws, req) {
         if (user.rooms.includes(roomId)) {
           user.ws.send(
             JSON.stringify({
-              type: "chat",
+              type: "update",
               roomId,
               message,
             })
