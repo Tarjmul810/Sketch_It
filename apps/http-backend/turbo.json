@@ -1,0 +1,13 @@
+{
+    "extends": ["//"],
+    "tasks": {
+        "build": {
+            "inputs": [".dist/**"],
+            "env": ["DATABASE_URL"]
+        },
+        "dev": {
+            "inputs": [".dist/**"],
+            "env": ["DATABASE_URL"]
+        }
+    }
+}
