@@ -2,25 +2,21 @@
 
 import { useEffect, useRef, useState } from "react"
 import { useSocket } from "../hooks/useSocket"
-import { init } from "../app/draw/init"
-import { Pencil, RectangleHorizontal, Circle, MousePointer2, Trash } from "lucide-react"
+import { init } from "../draw/init"
+import { Pencil, RectangleHorizontal, Circle, MousePointer2, Trash, Hand } from "lucide-react"
 import { Icon } from "./Icon"
-
-interface Shapes {
-    type: "Rect" | "Circle" | "line" | "pan" | "delete"
-}
+import { Types } from "../types/type"
 
 export function CanvasClient({ roomId }: { roomId: number }) {
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const { socket, loading } = useSocket()
-    const [shape, setShape] = useState<Shapes["type"]>("pan")
+    const [shape, setShape] = useState<Types>("delete")
 
     useEffect(() => {
         if (!canvasRef.current || !socket || loading) return
 
         const canvas = canvasRef.current
         socket.send(JSON.stringify({ type: "join-room", roomId }))
-        console.log("React", shape)
 
         init({ canvas, socket, roomId, shape })
     }, [socket, roomId, shape, loading])
@@ -36,16 +32,17 @@ export function CanvasClient({ roomId }: { roomId: number }) {
 }
 
 interface ToolBarProps {
-    shape: Shapes["type"]
-    setShape: (shape: Shapes["type"]) => void
+    shape: Types
+    setShape: (shape: Types) => void
 }
 
 function ToolBar({ shape, setShape }: ToolBarProps) {
     return <div className="flex flex- fixed">
         <Icon icon={<Pencil />} activated={shape === "line"} onClick={() => setShape("line")} />
-        <Icon icon={<RectangleHorizontal />} activated={shape === "Rect"} onClick={() => setShape("Rect")} />
-        <Icon icon={<Circle />} activated={shape === "Circle"} onClick={() => setShape("Circle")}/>
-        <Icon icon={<MousePointer2 />} activated={shape === "pan"} onClick={() => setShape("pan")} /> 
+        <Icon icon={<RectangleHorizontal />} activated={shape === "rect"} onClick={() => setShape("rect")} />
+        <Icon icon={<Circle />} activated={shape === "circle"} onClick={() => setShape("circle")} />
+        <Icon icon={<MousePointer2 />} activated={shape === "moveShape"} onClick={() => setShape("moveShape")} />
         <Icon icon={<Trash />} activated={shape === "delete"} onClick={() => setShape("delete")} />
+        <Icon icon={<Hand />} activated={shape === "pan"} onClick={() => setShape("pan")} />
     </div>
 }

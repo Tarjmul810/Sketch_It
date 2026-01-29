@@ -1,0 +1,127 @@
+import { StatementSync } from "node:sqlite";
+import { Box } from "../types/interactions";
+import { Shapes } from "../types/shapes";
+import { Tools } from "../types/tool";
+import { isPointInsideBox } from "../utils/isPointInsideBox";
+import { isShapeInsideBoundingBox } from "../utils/isShapeInsideBox";
+import { AppContext } from "../types/appContext";
+import { sendSahpe } from "../utils/sendShape";
+
+
+export const SelectTool: Tools = {
+  onMouseDown(state, e) {
+    state.interaction.isDragging = true;
+    state.interaction.dragStartScreen = { x: e.clientX, y: e.clientY };
+  },
+  onMouseMove(state, e) {},
+  onMouseUp(state, e, ctx) {
+    if (!state.interaction.isDragging || !state.interaction.dragStartScreen)
+      return;
+
+    const start = state.interaction.dragStartScreen;
+    const end = { x: e.clientX, y: e.clientY };
+
+    const worldStartX = start.x - state.camera.x;
+    const worldStartY = start.y - state.camera.y;
+    const worldEndX = end.x - state.camera.x;
+    const worldEndY = end.y - state.camera.y;
+
+    if (state.interaction.selectionBox) {
+ if (
+      !isPointInsideBox(
+        start.x - state.camera.x,
+        start.y - state.camera.y,
+        state.interaction.selectionBox.startX,
+        state.interaction.selectionBox.startY,
+        state.interaction.selectionBox.endX,
+        state.interaction.selectionBox.endY,
+      )
+    ) {
+      state.interaction.selectionBox = null;
+      return;
+    }
+
+    const { selectedShapes, restShapes } = partionShapesBySelection(
+      state.shapes,
+      state.interaction.selectionBox,
+    );
+
+    console.log(state.interaction.selectionBox)
+
+    console.log(selectedShapes, restShapes)
+
+    const selectAction: any = {
+        moveShape: moveAction,
+        delete: deleteAction
+    }
+    
+    const action = selectAction[state.interaction.activeTool]
+
+    if (action) {
+        action(state.shapes, ctx, selectedShapes, restShapes)
+    }
+
+    state.interaction.isDragging = false;
+    state.interaction.dragStartScreen = null;
+    state.interaction.selectionBox = null;
+    return;
+    }
+
+    state.interaction.selectionBox = {
+      startX: worldStartX,
+      startY: worldStartY,
+      endX: worldEndX,
+      endY: worldEndY,
+      width: worldEndX - worldStartX,
+      height: worldEndY - worldStartY,
+    };
+
+    console.log("fuck you all")
+   
+    state.interaction.isDragging = false;
+    state.interaction.dragStartScreen = null;
+    return
+  },
+};
+
+function partionShapesBySelection(shapes: Shapes[], selectionBox: Box) {
+  const selectedShapes: Shapes[] = [];
+  const restShapes: Shapes[] = [];
+
+  for (const shape of shapes) {
+    if (isShapeInsideBoundingBox(shape, selectionBox)) {
+      selectedShapes.push(shape);
+    } else {
+      restShapes.push(shape);
+    }
+  }
+
+  return { selectedShapes, restShapes };
+}
+
+function deleteAction(shapes: Shapes[], ctx: AppContext, select: Shapes[], rest: Shapes[]) {
+
+    const deletedShapes = select.map(s => ({id: s.id, shape: s}))
+
+    shapes = rest
+
+    sendSahpe(ctx, "delete", deletedShapes)
+}
+
+function moveAction(shapes: Shapes[], ctx: AppContext, select: Shapes[], rest: Shapes[]) {
+    
+    const movedShapes: {id: string, shape: Shapes}[] = []
+
+    const updated = [...rest]
+
+    for (const shape of select) {
+        movedShapes.push({id: shape.id, shape: shape})
+        updated.push(shape)
+    }
+
+    shapes = updated
+
+    shapes.push(...select)
+
+    sendSahpe(ctx, "update", movedShapes)
+}
