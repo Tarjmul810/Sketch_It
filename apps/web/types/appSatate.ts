@@ -7,3 +7,4 @@ export type AppState = {
     camera: Camera;
     interaction: Interaction;
 }
+

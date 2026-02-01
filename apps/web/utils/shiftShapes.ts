@@ -2,19 +2,13 @@ import { Shapes } from "../types/shapes";
 
 export const shiftShape = ({
   shape,
-  startX,
-  startY,
-  endX,
-  endY,
+  shiftX,
+  shiftY,
 }: {
   shape: Shapes;
-  startX: number;
-  startY: number;
-  endX: number;
-  endY: number;
+  shiftX: number;
+  shiftY: number;
 }): Shapes => {
-  const shiftX = endX - startX;
-  const shiftY = endY - startY;
 
   if (shape.type === "rect") {
     return {

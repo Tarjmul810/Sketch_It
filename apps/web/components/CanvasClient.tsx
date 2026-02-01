@@ -10,7 +10,7 @@ import { Types } from "../types/type"
 export function CanvasClient({ roomId }: { roomId: number }) {
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const { socket, loading } = useSocket()
-    const [shape, setShape] = useState<Types>("delete")
+    const [shape, setShape] = useState<Types>("circle")
 
     useEffect(() => {
         if (!canvasRef.current || !socket || loading) return

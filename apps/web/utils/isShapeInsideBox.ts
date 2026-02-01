@@ -36,6 +36,8 @@ const circleLogic = (box: any, shape: any) => {
     box.width > shape.radius * 2 &&
     box.height > shape.radius * 2
   ) {
+
+    console.log("true")
     return true;
   } else {
     return false;

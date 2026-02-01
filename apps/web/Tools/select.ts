@@ -1,19 +1,28 @@
-import { StatementSync } from "node:sqlite";
 import { Box } from "../types/interactions";
 import { Shapes } from "../types/shapes";
 import { Tools } from "../types/tool";
 import { isPointInsideBox } from "../utils/isPointInsideBox";
 import { isShapeInsideBoundingBox } from "../utils/isShapeInsideBox";
 import { AppContext } from "../types/appContext";
-import { sendSahpe } from "../utils/sendShape";
-
+import { sendSahpe } from "../utils/sendShapes";
+import { shiftShape } from "../utils/shiftShapes";
+import { AppState } from "../types/appSatate";
 
 export const SelectTool: Tools = {
   onMouseDown(state, e) {
     state.interaction.isDragging = true;
     state.interaction.dragStartScreen = { x: e.clientX, y: e.clientY };
   },
-  onMouseMove(state, e) {},
+  onMouseMove(state, e) {
+    if (!state.interaction.isDragging || !state.interaction.dragStartScreen)
+      return;
+
+    state.interaction.preview = {
+      tool: "rect",
+      start: state.interaction.dragStartScreen,
+      end: { x: e.clientX, y: e.clientY },
+    };
+  },
   onMouseUp(state, e, ctx) {
     if (!state.interaction.isDragging || !state.interaction.dragStartScreen)
       return;
@@ -21,50 +30,54 @@ export const SelectTool: Tools = {
     const start = state.interaction.dragStartScreen;
     const end = { x: e.clientX, y: e.clientY };
 
-    const worldStartX = start.x - state.camera.x;
-    const worldStartY = start.y - state.camera.y;
-    const worldEndX = end.x - state.camera.x;
-    const worldEndY = end.y - state.camera.y;
+    const worldStartX = start.x / state.camera.scale - state.camera.x;
+    const worldStartY = start.y / state.camera.scale - state.camera.y;
+    const worldEndX = end.x / state.camera.scale - state.camera.x;
+    const worldEndY = end.y / state.camera.scale - state.camera.y;
+
+    const shiftX = worldEndX - worldStartX;
+    const shiftY = worldEndY - worldStartY;
 
     if (state.interaction.selectionBox) {
- if (
-      !isPointInsideBox(
-        start.x - state.camera.x,
-        start.y - state.camera.y,
-        state.interaction.selectionBox.startX,
-        state.interaction.selectionBox.startY,
-        state.interaction.selectionBox.endX,
-        state.interaction.selectionBox.endY,
-      )
-    ) {
+      if (
+        !isPointInsideBox(
+          start.x / state.camera.scale - state.camera.x,
+          start.y / state.camera.scale - state.camera.y,
+          state.interaction.selectionBox.startX,
+          state.interaction.selectionBox.startY,
+          state.interaction.selectionBox.endX,
+          state.interaction.selectionBox.endY,
+        )
+      ) {
+        state.interaction.selectionBox = null;
+        return;
+      }
+
+      state.interaction.delta = {
+        dx: shiftX,
+        dy: shiftY,
+      };
+
+      const { selectedShapes, restShapes } = partionShapesBySelection(
+        state.shapes,
+        state.interaction.selectionBox,
+      );
+
+      const selectAction: any = {
+        moveShape: moveAction,
+        delete: deleteAction,
+      };
+
+      const action = selectAction[state.interaction.activeTool];
+
+      if (action) {
+        action(state, ctx, selectedShapes, restShapes);
+      }
+
+      state.interaction.isDragging = false;
+      state.interaction.dragStartScreen = null;
       state.interaction.selectionBox = null;
       return;
-    }
-
-    const { selectedShapes, restShapes } = partionShapesBySelection(
-      state.shapes,
-      state.interaction.selectionBox,
-    );
-
-    console.log(state.interaction.selectionBox)
-
-    console.log(selectedShapes, restShapes)
-
-    const selectAction: any = {
-        moveShape: moveAction,
-        delete: deleteAction
-    }
-    
-    const action = selectAction[state.interaction.activeTool]
-
-    if (action) {
-        action(state.shapes, ctx, selectedShapes, restShapes)
-    }
-
-    state.interaction.isDragging = false;
-    state.interaction.dragStartScreen = null;
-    state.interaction.selectionBox = null;
-    return;
     }
 
     state.interaction.selectionBox = {
@@ -76,11 +89,17 @@ export const SelectTool: Tools = {
       height: worldEndY - worldStartY,
     };
 
-    console.log("fuck you all")
-   
+    console.log("fuck you all");
+
     state.interaction.isDragging = false;
     state.interaction.dragStartScreen = null;
-    return
+
+    state.interaction.preview = {
+      tool: null,
+      start: null,
+      end: null,
+    };
+    return;
   },
 };
 
@@ -99,29 +118,43 @@ function partionShapesBySelection(shapes: Shapes[], selectionBox: Box) {
   return { selectedShapes, restShapes };
 }
 
-function deleteAction(shapes: Shapes[], ctx: AppContext, select: Shapes[], rest: Shapes[]) {
+function deleteAction(
+  state: AppState,
+  ctx: AppContext,
+  select: Shapes[],
+  rest: Shapes[],
+) {
+  const deletedShapes = select.map((s) => ({ id: s.id, shape: s }));
 
-    const deletedShapes = select.map(s => ({id: s.id, shape: s}))
+  state.shapes = rest;
 
-    shapes = rest
-
-    sendSahpe(ctx, "delete", deletedShapes)
+  sendSahpe(ctx, "delete", deletedShapes);
 }
 
-function moveAction(shapes: Shapes[], ctx: AppContext, select: Shapes[], rest: Shapes[]) {
-    
-    const movedShapes: {id: string, shape: Shapes}[] = []
+function moveAction(
+  state: AppState,
+  ctx: AppContext,
+  select: Shapes[],
+  rest: Shapes[],
+) {
+  const movedShapes: { id: string; shape: Shapes }[] = [];
 
-    const updated = [...rest]
+  const updated = [...rest];
 
-    for (const shape of select) {
-        movedShapes.push({id: shape.id, shape: shape})
-        updated.push(shape)
-    }
+  for (const shape of select) {
+    const moved = shiftShape({
+      shape,
+      shiftX: state.interaction.delta.dx,
+      shiftY: state.interaction.delta.dy,
+    });
 
-    shapes = updated
+    movedShapes.push({ id: moved.id, shape: moved });
+    updated.push(moved);
+  }
 
-    shapes.push(...select)
+  state.shapes = updated;
 
-    sendSahpe(ctx, "update", movedShapes)
+  state.shapes.push(...select);
+
+  sendSahpe(ctx, "update", movedShapes);
 }
