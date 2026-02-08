@@ -20,7 +20,7 @@ const worldRender = (
 ) => {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  ctx.strokeStyle = "white";
+  ctx.strokeStyle = "black";
 
   shapes.forEach((shape) => {
     if (shape.type === "rect") {

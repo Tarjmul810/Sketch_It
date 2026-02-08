@@ -53,6 +53,8 @@ export const SelectTool: Tools = {
         return;
       }
 
+
+
       state.interaction.delta = {
         dx: shiftX,
         dy: shiftY,
@@ -67,6 +69,8 @@ export const SelectTool: Tools = {
         moveShape: moveAction,
         delete: deleteAction,
       };
+ 
+      console.log(state.interaction.selectionBox);
 
       const action = selectAction[state.interaction.activeTool];
 

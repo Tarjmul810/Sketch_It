@@ -3,13 +3,20 @@ import { signinSchema, signupSchema } from "@repo/common/validation";
 import { SECRET } from "@repo/common/config";
 import { prismaClient } from "@repo/db";
 import { middleware } from "./middleware";
-import cors from "cors"
+import cors from "cors";
 import jwt from "jsonwebtoken";
+import cookieParser from "cookie-parser";
 
 const app = express();
 
 app.use(json());
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+  }),
+);
+app.use(cookieParser());
 
 app.post("/signup", async (req, res) => {
   const { email, password, name } = req.body;
@@ -17,23 +24,24 @@ app.post("/signup", async (req, res) => {
 
   if (!success) return res.status(404).json({ message: "Invalid Schema" });
 
-  console.log(success)
-
   const user = await prismaClient.user.create({
     data: {
-       email,
-       password,
-       name
-    }
-  })
+      email,
+      password,
+      name,
+    },
+  });
 
-  const userId = user.id
+  const userId = user.id;
 
-  const token = jwt.sign({ userId , email }, SECRET);
+  const token = jwt.sign({ userId, email }, SECRET);
+
+  res.cookie("token", token);
 
   res.status(200).json({
     message: "Signed Up succesfully",
     token,
+    email,
   });
 });
 
@@ -45,93 +53,94 @@ app.post("/signin", async (req, res) => {
 
   const user = await prismaClient.user.findFirst({
     where: {
-      email
-    }
-  })
+      email,
+    },
+  });
 
   if (!user) {
-    return res.status(401).json({ message: "Inavlid Credentials"})
+    return res.status(401).json({ message: "Inavlid Credentials" });
   }
 
-  const userId = user.id
+  const userId = user.id;
 
   const token = jwt.sign({ userId, email }, SECRET);
 
+  res.cookie("token", token);
+
   res.status(200).json({
-    message: "Logged In succesfully",
+    message: "Signed In succesfully",
     token,
+    email,
   });
 });
 
-app.post("/room", middleware, async(req, res) => {
+app.post("/room", middleware, async (req, res) => {
   const { slug } = req.body;
-  const adminId = Number(req.userId)
+  const adminId = Number(req.userId);
 
   const room = await prismaClient.room.create({
     data: {
       slug,
-      adminId
-    }
-  })
-
-  const roomId = room?.id
+      adminId,
+    },
+  });
 
   res.status(200).json({
     message: "success",
-    roomId
+    slug,
   });
 });
 
-app.get("/room/:slug", middleware, async(req, res) => {
-  const slug = req.params.slug as string
+app.get("/room/:slug", middleware, async (req, res) => {
+  const slug = req.params.slug as string;
 
   const room = await prismaClient.room.findFirst({
     where: {
-      slug: slug
-    }
-  })
+      slug: slug,
+    },
+  });
 
-  const roomId = room?.id
+  const roomId = room?.id;
 
   res.status(200).json({
     message: "success",
-    roomId
+    roomId,
   });
 });
 
 app.get("/chats/:roomId", middleware, async (req, res) => {
-  const roomId = Number(req.params.roomId)
+  const roomId = Number(req.params.roomId);
 
   const messages = await prismaClient.chat.findMany({
     where: {
-      roomId
+      roomId,
     },
     orderBy: {
-      id: "desc"
+      id: "desc",
     },
-    take: 500
-  })
+    take: 500,
+  });
 
   res.status(200).json({
     message: "Success",
-    messages
+    messages,
   });
 });
 
 app.put("/chat/:shapeId", middleware, async (req, res) => {
-  const shapeId = req.params.shapeId as string
-  const message = req.body.message
+  const shapeId = req.params.shapeId as string;
+  const message = req.body.message;
 
   await prismaClient.chat.update({
     where: {
-      shapeId
+      shapeId,
     },
     data: {
-      message
-    }
-  })
+      message,
+    },
+  });
 
-  res.json({message: "Success"})
-})
+  res.json({ message: "Success" });
+});
 
 app.listen(3001);

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Inter, Kalam } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 
@@ -6,6 +7,18 @@ const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
 });
+
+export const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+});
+
+export const kalam = Kalam({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-hand",
+});
+
 const geistMono = localFont({
   src: "./fonts/GeistMonoVF.woff",
   variable: "--font-geist-mono",
@@ -23,9 +36,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} bg-black`}>
+      <body className={`${kalam.variable} ${inter.variable}`}>
         {children}
       </body>
-    </html>
+    </html >
   );
 }

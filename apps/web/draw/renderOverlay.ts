@@ -8,7 +8,7 @@ export function renderOverlays(ctx: CanvasRenderingContext2D, state: AppState) {
   ctx.save();
   
   ctx.setLineDash([6, 4]);
-  ctx.strokeStyle = "white";
+  ctx.strokeStyle = "black";
 
   previewShape({
     ctx,

@@ -8,7 +8,7 @@ interface ButtonProps {
 export function Icon ({className, icon, onClick, activated}: ButtonProps) {
    
     return (
-       <div className={`rounded-full p-2 m-2 outline-3 cursor-pointer ${activated ? "text-red-600" : "text-white"}`} onClick={onClick}>
+       <div className={`rounded-full p-2 m-2 outline-2 cursor-pointer ${activated ? "text-red-600" : "text-black"}`} onClick={onClick}>
             {icon}
         </div>
     )

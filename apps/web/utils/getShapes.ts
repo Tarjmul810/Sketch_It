@@ -3,11 +3,18 @@ import axios from "axios";
 import { Shapes } from "../types/shapes";
 
 export const getShapes = async (roomId: number) => {
-  const response = await axios.get(`${BACKEND_URL}/chats/${roomId}`, {
-    headers: { Authorization: `Bearer ${TOKEN}` },
-  });
+  const token = localStorage.getItem("token")
 
-  return response.data.messages.map((m: any) =>
-    JSON.parse(m.message),
-  ) as Shapes[];
+  try {
+    const response = await axios.get(`${BACKEND_URL}/chats/${roomId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  
+    return response.data.messages.map((m: any) =>
+      JSON.parse(m.message),
+    ) as Shapes[];
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
 };

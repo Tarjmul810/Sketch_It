@@ -28,7 +28,7 @@ export async function init({
   if (!ctx) return;
 
   const state: AppState = {
-    shapes: await getShapes(roomId),
+    shapes: await getShapes(roomId) || [],
     camera: loadCamera(),
     interaction: {
       activeTool: shape,
