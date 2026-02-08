@@ -26,9 +26,14 @@ Add screenshots of the canvas, toolbar, and collaboration here.
 
 Example:
 
-![Canvas Light Mode](./images/canvas-light.png)
-![Canvas Dark Mode](./images/canvas-dark.png)
-![Collaboration](./images/collaboration.png)
+<img width="1918" height="1020" alt="image" src="https://github.com/user-attachments/assets/1a933243-4195-492c-af93-0a56a1a5deee" />
+<img width="1918" height="1020" alt="image" src="https://github.com/user-attachments/assets/ce7fe06f-a710-4949-ac75-254808537e06" />
+<img width="1919" height="1021" alt="image" src="https://github.com/user-attachments/assets/ec79a302-c358-40af-bedf-dcf5f74707b7" />
+<img width="1908" height="1016" alt="image" src="https://github.com/user-attachments/assets/7514f12d-a585-4ef4-a956-b910e23c2dcc" />
+
+
+
+
 
 ---
 
