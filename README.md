@@ -53,6 +53,7 @@ Example:
 
 ## 📁 Monorepo Structure
 
+```
 ├── apps
 │ ├── web # Next.js frontend (canvas UI)
 │ ├── http # HTTP backend (rooms, persistence, APIs)
@@ -65,6 +66,7 @@ Example:
 ├── turbo.json
 ├── package.json
 └── README.md
+```
 
 ---
 
@@ -94,17 +96,18 @@ Create `.env` files where required.
 ---
 
 ## 🧠 Architecture Overview
-
+```
 Browser
-│
+|
 ├── HTTP → REST API
 │ └── rooms, persistence, metadata
 │
-└── WebSocket → Real-time events
+|── WebSocket → Real-time events
 ├── create shape
 ├── update shape
 ├── delete shape
 └── presence / cursor (future)
+```
 
 ---
 
