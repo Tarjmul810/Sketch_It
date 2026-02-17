@@ -1,135 +1,182 @@
-# Turborepo starter
+# 🖊️ Collaborative Canvas (Excalidraw-like)
 
-This Turborepo starter is maintained by the Turborepo core team.
+A real-time collaborative whiteboard built with **Next.js**, **WebSockets**, and **Turborepo**.  
+Draw, move, delete, pan, zoom, and collaborate live on an infinite canvas.
 
-## Using this example
+This project focuses on **clean canvas architecture**, **real-time synchronization**, and **scalable system design** rather than UI gimmicks.
 
-Run the following command:
+---
 
-```sh
-npx create-turbo@latest
-```
+## ✨ Features
 
-## What's inside?
+- 🧠 Infinite canvas (pan & zoom)
+- ✏️ Draw shapes (rectangles, circles, lines)
+- 🎨 Change shape colors
+- 🧩 Select, move, and delete shapes
+- 🤝 Real-time collaboration via WebSockets
+- 🌗 Light & dark mode
+- ⚡ Monorepo setup using Turborepo
+- 🧱 Clean separation of UI, camera, and world layers
 
-This Turborepo includes the following packages/apps:
+---
 
-### Apps and Packages
+## 📸 Screenshots
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+Add screenshots of the canvas, toolbar, and collaboration here.
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+Example:
 
-### Utilities
+<img width="1918" height="1020" alt="image" src="https://github.com/user-attachments/assets/1a933243-4195-492c-af93-0a56a1a5deee" />
+<img width="1918" height="1020" alt="image" src="https://github.com/user-attachments/assets/ce7fe06f-a710-4949-ac75-254808537e06" />
+<img width="1919" height="1021" alt="image" src="https://github.com/user-attachments/assets/ec79a302-c358-40af-bedf-dcf5f74707b7" />
+<img width="1908" height="1016" alt="image" src="https://github.com/user-attachments/assets/7514f12d-a585-4ef4-a956-b910e23c2dcc" />
+<img width="1912" height="1019" alt="image" src="https://github.com/user-attachments/assets/263538b5-838b-48e3-bcf2-47429de390ae" />
 
-This Turborepo has some additional tools already setup for you:
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
 
-### Build
 
-To build all apps and packages, run the following command:
 
-```
-cd my-turborepo
+---
 
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
+## 🏗️ Tech Stack
 
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
-```
+### Frontend
+- Next.js (App Router)
+- Tailwind CSS v4
+- HTML Canvas API
+- WebSocket client
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+### Backend
+- Node.js
+- HTTP API (REST)
+- WebSocket server (real-time sync)
 
-```
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
+### Infrastructure
+- Turborepo (monorepo)
+- TypeScript everywhere
 
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
+---
 
-### Develop
-
-To develop all apps and packages, run the following command:
+## 📁 Monorepo Structure
 
 ```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
+├── apps
+│ ├── web # Next.js frontend (canvas UI)
+│ ├── http # HTTP backend (rooms, persistence, APIs)
+│ └── ws # WebSocket server (real-time sync)
+│
+├── packages
+│ ├── common # Shared types, utils, constants
+│ └── ui # Shared UI components (optional)
+│
+├── turbo.json
+├── package.json
+└── README.md
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+---
 
+## 🚀 Getting Started
+
+### Install dependencies
+
+`pnpm i`
+
+---
+
+### Run all apps together (recommended)
+
+`pnpm turbo dev`
+
+This will start:
+- Next.js web app
+- HTTP backend
+- WebSocket server
+
+---
+
+## 🌐 Environment Variables
+
+Create `.env` files where required.
+
+---
+
+## 🧠 Architecture Overview
 ```
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
+Browser
+|
+├── HTTP → REST API
+│ └── rooms, persistence, metadata
+│
+|── WebSocket → Real-time events
+├── create shape
+├── update shape
+├── delete shape
+└── presence / cursor (future)
 ```
 
-## Useful Links
+---
 
-Learn more about the power of Turborepo:
+### Core Concepts
 
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+- Shapes are stored in **world coordinates**
+- Camera handles **pan & zoom** (screen ↔ world mapping)
+- UI layer is **never transformed**
+- WebSocket updates are **incremental and id-based**
+- Canvas redraws from authoritative state
+
+---
+
+## 🧪 Current Status
+
+- ✅ Core canvas drawing
+- ✅ Real-time sync
+- ✅ Pan & zoom
+- ✅ Clean toolbar
+- 🚧 Persistence improvements
+- 🚧 Authentication (planned)
+- 🚧 Mobile optimizations
+
+---
+
+## 🛣️ Roadmap
+
+- [ ] Shape resizing
+- [ ] Text tool
+- [ ] Cursor presence
+- [ ] Undo / redo
+- [ ] Authentication & permissions
+- [ ] Export (PNG / SVG)
+- [ ] Mobile gestures
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome.
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Open a pull request
+
+---
+
+## 📄 License
+
+MIT License  
+Use it, modify it, and improve it freely.
+
+---
+
+## 🙌 Acknowledgements
+
+Inspired by:
+- Excalidraw
+- Figma
+- Miro
+
+Built as a **learning-focused**, system-design-heavy project.
+
+
+
