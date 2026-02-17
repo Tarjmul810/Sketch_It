@@ -1,3 +1,4 @@
+import "dotenv/config"
 import express, { json } from "express";
 import { signinSchema, signupSchema } from "@repo/common/validation";
 import { SECRET } from "@repo/common/config";
@@ -51,11 +52,14 @@ app.post("/signin", async (req, res) => {
 
   if (!success) return res.status(404).json({ message: "Invalid Credentials" });
 
-  const user = await prismaClient.user.findFirst({
+  console.log(email, password);
+
+
+  const user = await prismaClient.user.findUnique({
     where: {
       email,
-    },
-  });
+    }
+  })
 
   if (!user) {
     return res.status(401).json({ message: "Inavlid Credentials" });
