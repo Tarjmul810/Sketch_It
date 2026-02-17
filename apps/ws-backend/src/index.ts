@@ -3,7 +3,9 @@ import jwt from "jsonwebtoken";
 import { SECRET } from "@repo/common/config"
 import { prismaClient } from "@repo/db"
 
-const wss = new WebSocketServer({ port: 8080 });
+const PORT = process.env.PORT as unknown as number || 8080 
+
+const wss = new WebSocketServer({ port: PORT });
 
 function checkUser(token: string) {
   const decoded = jwt.verify(token, SECRET);
