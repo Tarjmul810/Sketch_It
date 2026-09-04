@@ -1,58 +1,50 @@
-import { Shapes } from "../types/shapes";
 import { Tools } from "../types/tool";
-import { createAction } from "./rect";
+import { Shapes } from "../types/shapes";
+import { AppContext } from "../types/appContext";
+import { sendShape } from "../utils/sendShape";
 
 export const LineTool: Tools = {
   onMouseDown(state, e) {
     state.interaction.isDragging = true;
-    state.interaction.dragStartScreen = { x: e.clientX, y: e.clientY };
+    state.interaction.dragStart = { x: e.clientX, y: e.clientY };
   },
 
   onMouseMove(state, e) {
-    if (!state.interaction.isDragging || !state.interaction.dragStartScreen) return;
-
+    if (!state.interaction.isDragging || !state.interaction.dragStart) return;
     state.interaction.preview = {
       tool: "line",
-      start: state.interaction.dragStartScreen,
+      start: state.interaction.dragStart,
       end: { x: e.clientX, y: e.clientY },
-    }
+    };
   },
 
   onMouseUp(state, e, ctx) {
-    if (!state.interaction.isDragging || !state.interaction.dragStartScreen)
+    if (!state.interaction.isDragging || !state.interaction.dragStart) return;
+    const { camera } = state;
+    const screenToWorld = (sx: number, sy: number) => ({
+      x: sx / camera.scale + camera.x,
+      y: sy / camera.scale + camera.y,
+    });
+    const s = screenToWorld(state.interaction.dragStart.x, state.interaction.dragStart.y);
+    const en = screenToWorld(e.clientX, e.clientY);
+    if (Math.abs(en.x - s.x) < 2 && Math.abs(en.y - s.y) < 2) {
+      state.interaction.isDragging = false;
+      state.interaction.dragStart = null;
+      state.interaction.preview = null;
       return;
-
-    const start = state.interaction.dragStartScreen;
-    const end = { x: e.clientX, y: e.clientY };
-
-    const worldStartX = start.x / state.camera.scale - state.camera.x;
-    const worldStartY = start.y / state.camera.scale - state.camera.y;
-    const worldEndX = end.x / state.camera.scale - state.camera.x;
-    const worldEndY = end.y  / state.camera.scale - state.camera.y;
-
+    }
     const line: Shapes = {
       type: "line",
       id: crypto.randomUUID(),
-      startX: worldStartX,
-      startY: worldStartY,
-      endX: worldEndX,
-      endY: worldEndY,
+      startX: s.x,
+      startY: s.y,
+      endX: en.x,
+      endY: en.y,
     };
-
     state.shapes.push(line);
-
-    if (!ctx) return
-    createAction(ctx, [{ id: line.id, shape: line }]);
-
+    sendShape(ctx, "create", [{ id: line.id, shape: line }]);
     state.interaction.isDragging = false;
-    state.interaction.dragStartScreen = null;
-
-    state.interaction.preview = {
-      tool: null,
-      start: null,
-      end: null
-    }
-
-    return
+    state.interaction.dragStart = null;
+    state.interaction.preview = null;
   },
 };

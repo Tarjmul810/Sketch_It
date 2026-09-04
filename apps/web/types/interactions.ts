@@ -1,19 +1,30 @@
-import { Types } from "./type"
+export type Camera = {
+  x: number; // world offset x
+  y: number; // world offset y
+  scale: number;
+};
 
 export type Interaction = {
-    activeTool: Types,
-    isDragging: boolean,
-    dragStartScreen: { x: number, y: number} | null,
-    panStartCamera: { x: number, y: number} | null,
-    delta: { dx: number, dy: number} | { dx: 0, dy: 0},
-    selectionBox: Box | null,
-    preview: Preview
-}
+  activeTool: "line" | "rect" | "circle" | "select" | "pan";
+  isDragging: boolean;
+  dragStart: { x: number; y: number } | null;
+  panStart: Camera | null;
+  preview: Preview | null;
+  selection: Selection | null;
+};
 
-export type Box = { startX: number, startY: number, endX: number, endY: number, width: number, height: number}
+export type Preview = {
+  tool: "rect" | "circle" | "line";
+  start: { x: number; y: number }; // screen coords
+  end: { x: number; y: number }; // screen coords
+};
 
-type Preview = {
-    tool: "rect" | "circle" | "line" | null,
-    start: {x: number, y: number} | null,
-    end: {x: number, y: number} | null
-}
+export type Selection = {
+  box: {
+    x: number; // world coords
+    y: number;
+    width: number;
+    height: number;
+  };
+  shapeIds: string[];
+};

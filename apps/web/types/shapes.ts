@@ -4,8 +4,6 @@ export type Shapes =
       id: string;
       startX: number;
       startY: number;
-      endX: number;
-      endY: number;
       width: number;
       height: number;
     }
@@ -15,8 +13,6 @@ export type Shapes =
       x: number;
       y: number;
       radius: number;
-      startAngle: number;
-      endAngle: number;
     }
   | {
       type: "line";
@@ -25,4 +21,4 @@ export type Shapes =
       startY: number;
       endX: number;
       endY: number;
-    }
+    };

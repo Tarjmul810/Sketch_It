@@ -1,79 +1,49 @@
-import { previewShape } from "../draw/previewShape";
-import { AppContext } from "../types/appContext";
-import { Shapes } from "../types/shapes";
 import { Tools } from "../types/tool";
-import { sendSahpe } from "../utils/sendShapes";
+import { Shapes } from "../types/shapes";
+import { AppContext } from "../types/appContext";
+import { sendShape } from "../utils/sendShape";
 
 export const RectTool: Tools = {
   onMouseDown(state, e) {
+    console.log("RectTool")
     state.interaction.isDragging = true;
-    state.interaction.dragStartScreen = { x: e.clientX, y: e.clientY };
+    state.interaction.dragStart = { x: e.clientX, y: e.clientY };
   },
 
   onMouseMove(state, e) {
-    if (!state.interaction.isDragging || !state.interaction.dragStartScreen)
-      return;
-
+    if (!state.interaction.isDragging || !state.interaction.dragStart) return;
     state.interaction.preview = {
       tool: "rect",
-      start: state.interaction.dragStartScreen,
+      start: state.interaction.dragStart,
       end: { x: e.clientX, y: e.clientY },
     };
   },
 
   onMouseUp(state, e, ctx) {
-    if (!state.interaction.isDragging || !state.interaction.dragStartScreen)
+    if (!state.interaction.isDragging || !state.interaction.dragStart) return;
+    const { camera } = state;
+    const screenToWorld = (sx: number, sy: number) => ({
+      x: (sx / camera.scale) + camera.x,
+      y: (sy / camera.scale) + camera.y,
+    });
+    const s = screenToWorld(state.interaction.dragStart.x, state.interaction.dragStart.y);
+    const en = screenToWorld(e.clientX, e.clientY);
+    const x = Math.min(s.x, en.x);
+    const y = Math.min(s.y, en.y);
+    const w = Math.abs(en.x - s.x);
+    const h = Math.abs(en.y - s.y);
+    if (w < 4 && h < 4) {
+      // tiny accidental drag — ignore
+      state.interaction.isDragging = false;
+      state.interaction.dragStart = null;
+      state.interaction.preview = null;
       return;
-
-    const start = state.interaction.dragStartScreen;
-    const end = { x: e.clientX, y: e.clientY };
-
-    const worldStartX = Math.min(start.x, end.x) / state.camera.scale - state.camera.x;
-    const worldStartY = Math.min(start.y, end.y) / state.camera.scale - state.camera.y;
-    const worldEndX = Math.max(start.x, end.x) / state.camera.scale - state.camera.x;
-    const worldEndY = Math.max(start.y, end.y) / state.camera.scale - state.camera.y;
-
-    const shiftX = worldEndX - worldStartX;
-    const shiftY = worldEndY - worldStartY;
-
-    const rect: Shapes = {
-      type: "rect",
-      id: crypto.randomUUID(),
-      startX: worldStartX,
-      startY: worldStartY,
-      endX: worldEndX,
-      endY: worldEndY,
-      width: worldEndX - worldStartX,
-      height: worldEndY - worldStartY,
-    };
-
-    const shape = {
-      id: rect.id,
-      shape: rect,
-    };
-
-    if (!ctx) return;
-
-    createAction(ctx, [shape]);
-
-    state.shapes.push(rect);
-
-    state.interaction.isDragging = false;
-    state.interaction.dragStartScreen = null;
-
-    state.interaction.preview = {
-      tool: null,
-      start: null,
-      end: null
     }
-
-    return
+    const rect: Shapes = { type: "rect", id: crypto.randomUUID(), startX: x, startY: y, width: w, height: h };
+    state.shapes.push(rect);
+    sendShape(ctx, "create", [{ id: rect.id, shape: rect }]);
+    state.interaction.isDragging = false;
+    state.interaction.dragStart = null;
+    state.interaction.preview = null;
   },
 };
-
-export function createAction(
-  ctx: AppContext,
-  message: { id: string; shape: Shapes }[],
-) {
-  sendSahpe(ctx, "create", message);
-}

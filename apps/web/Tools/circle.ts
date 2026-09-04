@@ -1,59 +1,44 @@
 import { Tools } from "../types/tool";
 import { Shapes } from "../types/shapes";
-import { createAction } from "./rect";
+import { AppContext } from "../types/appContext";
+import { sendShape } from "../utils/sendShape";
 
 export const CircleTool: Tools = {
   onMouseDown(state, e) {
     state.interaction.isDragging = true;
-    state.interaction.dragStartScreen = { x: e.clientX, y: e.clientY };
+    state.interaction.dragStart = { x: e.clientX, y: e.clientY };
   },
 
   onMouseMove(state, e) {
-    if (!state.interaction.isDragging || !state.interaction.dragStartScreen) return;
-
+    if (!state.interaction.isDragging || !state.interaction.dragStart) return;
     state.interaction.preview = {
       tool: "circle",
-      start: state.interaction.dragStartScreen,
+      start: state.interaction.dragStart,
       end: { x: e.clientX, y: e.clientY },
-    }
+    };
   },
 
   onMouseUp(state, e, ctx) {
-    if (!state.interaction.isDragging || !state.interaction.dragStartScreen)
+    if (!state.interaction.isDragging || !state.interaction.dragStart) return;
+    const { camera } = state;
+    const screenToWorld = (sx: number, sy: number) => ({
+      x: sx / camera.scale + camera.x,
+      y: sy / camera.scale + camera.y,
+    });
+    const c = screenToWorld(state.interaction.dragStart.x, state.interaction.dragStart.y);
+    const edge = screenToWorld(e.clientX, e.clientY);
+    const radius = Math.sqrt((edge.x - c.x) ** 2 + (edge.y - c.y) ** 2);
+    if (radius < 4) {
+      state.interaction.isDragging = false;
+      state.interaction.dragStart = null;
+      state.interaction.preview = null;
       return;
-
-    const start = state.interaction.dragStartScreen;
-    const end = { x: e.clientX, y: e.clientY };
-
-    const worldStartX = start.x / state.camera.scale - state.camera.x;
-    const worldStartY = start.y / state.camera.scale - state.camera.y;
-    const worldEndX = end.x / state.camera.scale - state.camera.x;
-    const worldEndY = end.y / state.camera.scale - state.camera.y;
-
-    const circle: Shapes = {
-      type: "circle",
-      id: crypto.randomUUID(),
-      x: worldStartX,
-      y: worldStartY,
-      radius:Math.max(Math.abs(worldStartX - worldEndX), Math.abs(worldStartY - worldEndY)),
-      startAngle: 0,
-      endAngle: 2 * Math.PI,
-    };
-
-    state.shapes.push(circle);
-
-    if (!ctx) return
-    createAction(ctx, [{ id: circle.id, shape: circle }]);
-
-    state.interaction.isDragging = false;
-    state.interaction.dragStartScreen = null;
-
-    state.interaction.preview = {
-      tool: null,
-      start: null,
-      end: null
     }
-
-    return
+    const circle: Shapes = { type: "circle", id: crypto.randomUUID(), x: c.x, y: c.y, radius };
+    state.shapes.push(circle);
+    sendShape(ctx, "create", [{ id: circle.id, shape: circle }]);
+    state.interaction.isDragging = false;
+    state.interaction.dragStart = null;
+    state.interaction.preview = null;
   },
 };

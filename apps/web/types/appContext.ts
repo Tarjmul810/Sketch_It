@@ -1,6 +1,4 @@
-
-
 export type AppContext = {
-    socket: WebSocket,
-    roomId: number
-}
+  socket: WebSocket;
+  roomId: number;
+};

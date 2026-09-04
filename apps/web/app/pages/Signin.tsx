@@ -1,169 +1,147 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Eye, EyeOff, Lock, Mail, Pencil } from "lucide-react"
-import { useRouter } from "next/navigation"
-import axios from "axios"
-import { BACKEND_URL } from "@repo/common/config"
+import Link from "next/link";
+import { AuthShell, AuthField } from "../../components/auth-shell";
+import { useState } from "react";
+import { BACKEND_URL } from "@repo/common/config";
+import { setToken } from "../../lib/auth";
 
 export default function SignInPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const router = useRouter()
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
+  const validate = () => {
+    if (!email) return "Email is required.";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "Enter a valid email address.";
+    if (!password) return "Password is required.";
+    return null;
+  };
 
-  const handleSignIn = async (e: any) => {
-
-    e.preventDefault()
-    setIsLoading(true)
-
-    setError("")
-
-    if (!email || !password) {
-      setError("Please enter email and password")
-      return
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const validationError = validate();
+    if (validationError) {
+      setError(validationError);
+      return;
     }
-    
-      try {
-        const response = await axios.post(`${BACKEND_URL}/signin`, {
-          email,
-          password
-        }, {
-          withCredentials: true
-        })
-
-        localStorage.setItem("token", response.data.token)
-        localStorage.setItem("email", response.data.email)
-        router.push('/dashboard')
-      } catch (error) {
-        setError("Invalid email or password")
-        setIsLoading(false)
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${BACKEND_URL}/signin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.message ?? "Invalid credentials. Please try again.");
+        return;
       }
-  }
+      // Store token for WebSocket and API auth
+      if (data.token) setToken(data.token);
+      // Redirect to dashboard
+      window.location.href = "/dashboard";
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-   return (
-      <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-cyan-50 flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <div
-          onClick={() => router.push("/")}
-            className="flex items-center gap-2 mb-12 cursor-pointer group"
+  return (
+    <AuthShell
+      eyebrow="Welcome back"
+      title={<>Pick up where you left off.</>}
+      subtitle="Sign in to your boards and the people drawing on them."
+      footer={
+        <>
+          New to Sketcha?{" "}
+          <Link
+            href="/auth/signup"
+            className="font-semibold text-[oklch(0.58_0.20_28)] underline-offset-4 hover:underline"
           >
-            <div className="w-10 h-10 bg-linear-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center transform rotate-3 group-hover:scale-110 transition-transform">
-              <Pencil className="w-6 h-6 text-white" strokeWidth={2.5} />
-            </div>
-            <span className="text-2xl font-bold bg-linear-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-              DrawFlow
-            </span>
-          </div>
+            Create an account
+          </Link>
+        </>
+      }
+    >
+      <form className="space-y-4" onSubmit={handleSubmit} noValidate>
+        <AuthField
+          id="email"
+          label="Email"
+          type="email"
+          placeholder="you@studio.com"
+          autoComplete="email"
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            if (error) setError(null);
+          }}
+          error={error && !email ? error : undefined}
+        />
+        <AuthField
+          id="password"
+          label="Password"
+          type="password"
+          placeholder="Your password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => {
+            setPassword(e.target.value);
+            if (error) setError(null);
+          }}
+          error={error && email && !password ? error : undefined}
+        />
 
-          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back</h1>
-            <p className="text-gray-600 mb-8">Sign in to your account to continue creating</p>
+        {/* Inline server error */}
+        {error && email && password && (
+          <p className="text-[13px] text-[oklch(0.55_0.20_25)]" role="alert">
+            {error}
+          </p>
+        )}
 
-            {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                {error}
-              </div>
-            )}
-
-            <form 
-            onSubmit={handleSignIn} 
-            className="space-y-5">
-              <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
-                  Email address
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" strokeWidth={2} />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none transition-colors placeholder-gray-400"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" strokeWidth={2} />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full pl-10 pr-10 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none transition-colors"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600 transition-colors"
-                  >
-                    {showPassword ? (
-                      <EyeOff className="w-5 h-5" strokeWidth={2} />
-                    ) : (
-                      <Eye className="w-5 h-5" strokeWidth={2} />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between text-sm">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4 border-2 border-gray-200 rounded text-blue-600 focus:outline-none"
-                  />
-                  <span className="text-gray-700">Remember me</span>
-                </label>
-                <a href="#" className="text-blue-600 hover:text-blue-700 font-medium">
-                  Forgot password?
-                </a>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full mt-8 py-3 bg-linear-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:shadow-lg transition-all hover:scale-105 font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+        <button
+          type="submit"
+          disabled={loading}
+          className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-[oklch(0.58_0.20_28)] text-sm font-semibold text-white shadow-sm transition-all hover:opacity-90 active:opacity-80 disabled:opacity-60"
+        >
+          {loading ? (
+            <>
+              <svg
+                className="animate-spin"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
               >
-                {isLoading ? 'Signing in...' : 'Sign in'}
-              </button>
-            </form>
-
-            <div className="mt-8 pt-6 border-t border-gray-200 text-center">
-              <p className="text-gray-600">
-                Don't have an account?{' '}
-                <button
-                  onClick={() => {
-                    router.push('/auth/signup');
-                    setError('');
-                  }}
-                  className="text-blue-600 hover:text-blue-700 font-semibold"
-                >
-                  Sign up
-                </button>
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-8 text-center">
-            <button
-              onClick={() => router.push('/')}
-              className="text-gray-600 hover:text-gray-900 transition-colors font-medium"
-            >
-              Back to home
-            </button>
-          </div>
-        </div>
-      </div>
-    );
+                <path d="M21 12a9 9 0 11-6.219-8.56" strokeLinecap="round" />
+              </svg>
+              Signing in…
+            </>
+          ) : (
+            <>
+              Sign in
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </>
+          )}
+        </button>
+      </form>
+    </AuthShell>
+  );
 }
